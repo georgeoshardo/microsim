@@ -215,6 +215,9 @@ class CameraCCD(_Camera):
 
 class CameraEMCCD(_Camera):
     camera_type: Literal["EMCCD"] = "EMCCD"
+    prnu_factor: PositiveFloat = 0
+    dsnu_factor: PositiveFloat = 0
+    read_noise_factor: PositiveFloat = 0
 
     em_gain: float
 
