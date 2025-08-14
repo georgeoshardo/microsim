@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from annotated_types import Ge, Interval
 from pydantic import Field
+from pydantic import Field, model_validator
 
 from microsim._data_array import DataArray, xrDataArray
 from microsim.schema._base_model import SimBaseModel
@@ -245,3 +246,40 @@ class CameraCMOS(_Camera):
         self, gray_values: npt.NDArray, binning: int, mode: str = "mean"
     ) -> npt.NDArray:
         return bin_window(gray_values, binning, mode)
+
+
+@model_validator(mode="after")
+def _generate_noise_maps(self) -> "CameraCMOS":
+    """Generate noise maps from factors if provided."""
+    xp = NumpyAPI.create("numpy")
+    has_factors = (
+        self.prnu_factor > 0 or self.dsnu_factor > 0 or self.read_noise_factor > 0
+    )
+    if not has_factors:
+        return self
+
+    if self.npixels_h is None or self.npixels_v is None:
+        raise ValueError(
+            "Cannot generate noise maps without camera shape. "
+            "Please provide npixels_h and npixels_v when using noise factors."
+        )
+
+    shape = (self.npixels_v, self.npixels_h)
+    dims = ("Y", "X")
+
+    # Photo Response Non-Uniformity
+    if self.prnu_factor > 0 and isinstance(self.qe, (float, int)):
+        mean = self.qe
+        std = self.qe * self.prnu_factor
+        loc = xp.full(shape, mean)
+        qe_map = xp.norm_rvs(loc=loc, scale=std)
+        self.qe = DataArray(xp.clip(qe_map, 0, 1), dims=dims)
+
+    # Dark Signal Non-Uniformity
+    if self.dsnu_factor > 0 and isinstance(self.dark_current, (float, int)):
+        mean = self.dark_current
+        std = self.dark_current * self.dsnu_factor
+        loc = xp.full(shape, mean)
+        dc_map = xp.norm_rvs(loc=loc, scale=std)
+        self.dark_current = DataArray(xp.maximum(0, dc_map), dims=dims)
+
