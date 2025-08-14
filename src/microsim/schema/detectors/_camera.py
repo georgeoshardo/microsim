@@ -25,21 +25,17 @@ class _Camera(SimBaseModel):
     ----------
     camera_type : str
         Type of camera, for discriminated union.
-    read_noise : float | xrDataArray
-        Read noise in electrons. If a float, the same noise is applied to all
-        pixels. If an array, it is used as a map of read noise per pixel.
-    qe : float | Spectrum | xrDataArray
+    read_noise : float
+        Read noise in electrons.
+    qe : float
         Quantum efficiency, from 0-1. If a float, it is assumed to be constant across
         all wavelengths. If a Spectrum, it is assumed to be a function of wavelength.
-        If an array, it is used as a map of QE per pixel.
     full_well : int
         Full well capacity in electrons.
     serial_reg_full_well : int, optional
         Serial register full well capacity in electrons.
-    dark_current : float | xrDataArray
-        Dark current in electrons per pixel per second. If a float, the same dark
-        current is applied to all pixels. If an array, it is used as a map of dark
-        current per pixel.
+    dark_current : float
+        Dark current in electrons per pixel per second.
     clock_induced_charge : float
         Clock induced charge in electrons per pixel per second.
     bit_depth : int
@@ -51,27 +47,22 @@ class _Camera(SimBaseModel):
         capacity at the maximum intensity value of the ADC bit depth.
     name : str
         A descriptive name for the camera.  Not used internally.
-    npixels_h : int, optional
-        Number of pixels in the horizontal direction.
-    npixels_v : int, optional
-        Number of pixels in the vertical direction.
     """
 
     camera_type: str = "generic"
-    read_noise: PositiveFloat | xrDataArray = 6
-    qe: Annotated[float, Interval(ge=0, le=1)] | Spectrum | xrDataArray = 1
+    read_noise: PositiveFloat = 6  # TODO: accept map of readout rate -> noise?
+    qe: Annotated[float, Interval(ge=0, le=1)] | Spectrum = 1
     full_well: int = 18_000
     serial_reg_full_well: int | None = None
-    dark_current: PositiveFloat | xrDataArray = Field(0.001, description="e/pix/sec")
+    dark_current: PositiveFloat = Field(0.001, description="e/pix/sec")
     clock_induced_charge: PositiveFloat = Field(0, description="e/pix/sec")
     bit_depth: PositiveInt = 12
     offset: int = 100
     gain: PositiveFloat = 1
     name: str = ""
 
-    npixels_h: int | None = None
-    npixels_v: int | None = None
-
+    # npixels_h: int = 1000
+    # npixels_v: int = 1000
 
     # TODO: add photodiode size ... this needs to be reconciled with the up/down-scaling
     # that we do elsewhere in the simulation
