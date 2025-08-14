@@ -283,3 +283,11 @@ def _generate_noise_maps(self) -> "CameraCMOS":
         dc_map = xp.norm_rvs(loc=loc, scale=std)
         self.dark_current = DataArray(xp.maximum(0, dc_map), dims=dims)
 
+    # Read Noise Variation
+    if self.read_noise_factor > 0 and isinstance(self.read_noise, (float, int)):
+        mean = self.read_noise
+        std = self.read_noise * self.read_noise_factor
+        loc = xp.full(shape, mean)
+        rn_map = xp.norm_rvs(loc=loc, scale=std)
+        self.read_noise = DataArray(xp.maximum(0, rn_map), dims=dims)
+    return self
